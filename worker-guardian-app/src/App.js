@@ -1,24 +1,29 @@
-import logo from "./logo.svg";
 import "./App.css";
+
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from "./providers/AuthContext";
+
+import Home from "./pages/Home";
+import LoginPage from "./pages/Login";
+import ProtectedRoute from "./hooks/ProtectedRoutes";
+import PublicRoute from "./hooks/PublicRoutes";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://platforma.polsl.pl/rau2/course/view.php?id=195"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          HolyTrinity WebApp
-        </a>
-      </header>
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          
+          {/* Public routes */}
+          <Route path="/" element={<PublicRoute Component={LoginPage} />} />
+          <Route path="/login" element={<PublicRoute Component={LoginPage} />} />
+          
+          {/* Protected routes */}
+          <Route path="/home" element={<ProtectedRoute Component={Home} />} />
+
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
