@@ -1,16 +1,24 @@
+# accounts/views.py
+
 from rest_framework import generics, permissions, status
-from django.contrib.auth.models import User
-from .serializers import UserRegistrationSerializer
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from .models import User
+from .serializers import (
+    UserRegistrationSerializer,
+    CustomAuthTokenSerializer,
+    ChangePasswordSerializer
+)
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.views import ObtainAuthToken
 
 class UserRegistrationView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
 
 class CustomAuthToken(ObtainAuthToken):
+    serializer_class = CustomAuthTokenSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
@@ -21,27 +29,41 @@ class CustomAuthToken(ObtainAuthToken):
         return Response({
             'token': token.key,
             'user_id': user.pk,
-            'email': user.email
+            'login': user.login,
+            'name': user.name,
+            'surname': user.surname,
         })
 
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        serializer = ChangePasswordSerializer(data=request.data)
+
+        if serializer.is_valid():
+            if not user.check_password(serializer.data.get('old_password')):
+                return Response({"old_password": "Stare hasło jest nieprawidłowe."}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(serializer.data.get('new_password'))
+            user.save()
+            return Response({"detail": "Hasło zostało zmienione."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class LogoutView(APIView):
-    # Pozwalamy na dostęp bez uwierzytelniania
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Pobieramy token z ciała żądania
         token_key = request.data.get('auth_token')
 
-        # Sprawdzamy, czy token został przekazany
         if not token_key:
             return Response({"detail": "Brak tokenu uwierzytelniającego."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Próbujemy znaleźć token w bazie danych
             token = Token.objects.get(key=token_key)
-            # Usuwamy token (wylogowanie)
             token.delete()
             return Response({"detail": "Pomyślnie wylogowano."}, status=status.HTTP_200_OK)
         except Token.DoesNotExist:
-            # Jeśli token nie istnieje, zwracamy błąd
             return Response({"detail": "Nieprawidłowy token."}, status=status.HTTP_400_BAD_REQUEST)
