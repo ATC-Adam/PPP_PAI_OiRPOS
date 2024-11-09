@@ -8,7 +8,8 @@ from .models import User
 from .serializers import (
     UserRegistrationSerializer,
     CustomAuthTokenSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    UpdateProfileSerializer
 )
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -67,3 +68,15 @@ class LogoutView(APIView):
             return Response({"detail": "Pomyślnie wylogowano."}, status=status.HTTP_200_OK)
         except Token.DoesNotExist:
             return Response({"detail": "Nieprawidłowy token."}, status=status.HTTP_400_BAD_REQUEST)
+
+class UpdateProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        user = request.user
+        serializer = UpdateProfileSerializer(user, data=request.data, partial=True, context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Profil został zaktualizowany."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

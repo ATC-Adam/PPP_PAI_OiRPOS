@@ -52,3 +52,21 @@ class ChangePasswordSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['new_password2']:
             raise serializers.ValidationError({"new_password": "Nowe hasła nie są identyczne."})
         return attrs
+
+class UpdateProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('login', 'name', 'surname')
+
+    def validate_login(self, value):
+        user = self.context['request'].user
+        if User.objects.exclude(pk=user.pk).filter(login=value).exists():
+            raise serializers.ValidationError("Użytkownik z tym loginem już istnieje.")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.login = validated_data.get('login', instance.login)
+        instance.name = validated_data.get('name', instance.name)
+        instance.surname = validated_data.get('surname', instance.surname)
+        instance.save()
+        return instance

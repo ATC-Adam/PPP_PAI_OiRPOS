@@ -9,6 +9,7 @@
    - [2. Logowanie użytkownika](#2-logowanie-użytkownika)
    - [3. Zmiana hasła](#3-zmiana-hasła)
    - [4. Wylogowanie użytkownika](#4-wylogowanie-użytkownika)
+   - [5. Aktualizacja profilu użytkownika](#5-aktualizacja-profilu-użytkownika)
 4. [Autoryzacja](#autoryzacja)
 5. [Obsługa błędów](#obsługa-błędów)
 6. [Testowanie za pomocą Postmana](#testowanie-za-pomocą-postmana)
@@ -17,7 +18,7 @@
 
 ## Wprowadzenie
 
-API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplikacji Django. Udostępnia endpointy do rejestracji, logowania, zmiany hasła oraz wylogowywania użytkowników.
+API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplikacji Django. Udostępnia endpointy do rejestracji, logowania, zmiany hasła, wylogowywania oraz aktualizacji profilu użytkowników.
 
 ---
 
@@ -210,6 +211,51 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 
 ---
 
+### 5. Aktualizacja profilu użytkownika
+
+**URL:** `/api/update_profile/`  
+**Metoda HTTP:** `PUT`  
+**Opis:** Pozwala zalogowanemu użytkownikowi zaktualizować login, imię i nazwisko.
+
+#### Nagłówki żądania:
+
+- `Content-Type: application/json`
+- `Authorization: Token twój_token`
+
+#### Body żądania:
+
+```json
+{
+  "login": "nowy_login_uzytkownika",
+  "name": "NoweImię",
+  "surname": "NoweNazwisko"
+}
+```
+
+**Opis pól:**
+
+- `login` *(string, opcjonalne)*: Nowy login użytkownika.
+- `name` *(string, opcjonalne)*: Nowe imię użytkownika.
+- `surname` *(string, opcjonalne)*: Nowe nazwisko użytkownika.
+
+#### Przykładowa odpowiedź:
+
+- **Status HTTP:** `200 OK`
+
+```json
+{
+  "detail": "Profil został zaktualizowany."
+}
+```
+
+#### Możliwe błędy:
+
+- **400 Bad Request:**
+  - Login jest już zajęty przez innego użytkownika.
+- **401 Unauthorized:** Brak lub nieprawidłowy token uwierzytelniający.
+
+---
+
 ## Autoryzacja
 
 - **Token uwierzytelniający** należy przesyłać w nagłówku `Authorization` w następującym formacie, **z wyjątkiem endpointu wylogowania, który oczekuje tokenu w ciele żądania**:
@@ -306,6 +352,26 @@ Authorization: Token twój_token
        "auth_token": "twój_token"
      }
      ```
+
+5. **Aktualizacja profilu użytkownika:**
+   - **Metoda:** `PUT`
+   - **URL:** `http://127.0.0.1:8000/api/update_profile/`
+   - **Nagłówki:**
+     - `Content-Type: application/json`
+     - `Authorization: Token twój_token`
+   - **Body:**
+
+     ```json
+     {
+       "login": "nowy_login_uzytkownika",
+       "name": "NoweImię",
+       "surname": "NoweNazwisko"
+     }
+     ```
+
+   - **Uwagi:**
+     - Możesz wysłać tylko te pola, które chcesz zaktualizować.
+     - Jeśli próbujesz zmienić login na taki, który już istnieje, otrzymasz błąd.
 
 ---
 
