@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import axios from 'axios';
 
 export const AuthContext = createContext();
 
@@ -19,20 +20,36 @@ export const AuthProvider = ({ children }) => {
     () => JSON.parse(localStorage.getItem("user")) || emptyUser
   );
   
-  /* TODO: API CALL */
-  const login = (username, password) => {
-    const userData = {
-      usrId: 1,
-      usrLogin: username,
-      usrFirstName: username,
-      usrLastName: username
+  const login = (username, password, handleError) => {
+    const user = {
+      login: username,
+      password: password
     }
-
-    setIsAuthenticated(true);
-    setUser(userData);
-
-    localStorage.setItem("isAuthenticated", JSON.stringify(true));
-    localStorage.setItem("user", JSON.stringify(userData));
+    
+    axios.post('/login/', user)
+      .then(res => {
+        /* TODO: zapisywac w localStorage czy ciasteczko? */
+        const userData = {
+          usrId: 1,
+          usrLogin: username,
+          usrFirstName: username,
+          usrLastName: username
+        }
+    
+        setIsAuthenticated(true);
+        setUser(userData);
+    
+        localStorage.setItem("isAuthenticated", JSON.stringify(true));
+        localStorage.setItem("user", JSON.stringify(userData));
+      })
+      .catch(err => {
+        if(err.status === 500) {
+          handleError('Wystąpił nieprzewidziany błąd serwera!');
+          return;
+        }
+        
+        handleError(err.response.data.non_field_errors[0]);
+      })
   }       
 
   /* TODO: API CALL */
