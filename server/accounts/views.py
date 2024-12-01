@@ -4,6 +4,9 @@ from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from .models import User
 from .serializers import (
     UserRegistrationSerializer,
@@ -12,7 +15,6 @@ from .serializers import (
     UpdateProfileSerializer
 )
 from django.contrib.auth import authenticate
-from rest_framework.authtoken.views import ObtainAuthToken
 
 class UserRegistrationView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -27,16 +29,30 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
+
+        response = Response({
             'user_id': user.pk,
             'login': user.login,
             'name': user.name,
             'surname': user.surname,
         })
 
+        response.set_cookie(
+            key='auth_token',
+            value=token.key,
+            httponly=True,
+            secure=False,  # Set to True in production
+            samesite='Lax'
+        )
+
+        return response
+
 class ChangePasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(ChangePasswordView, self).dispatch(*args, **kwargs)
 
     def post(self, request):
         user = request.user
@@ -53,21 +69,13 @@ class ChangePasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
-    authentication_classes = []
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        token_key = request.data.get('auth_token')
-
-        if not token_key:
-            return Response({"detail": "Brak tokenu uwierzytelniającego."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            token = Token.objects.get(key=token_key)
-            token.delete()
-            return Response({"detail": "Pomyślnie wylogowano."}, status=status.HTTP_200_OK)
-        except Token.DoesNotExist:
-            return Response({"detail": "Nieprawidłowy token."}, status=status.HTTP_400_BAD_REQUEST)
+        request.user.auth_token.delete()
+        response = Response({"detail": "Pomyślnie wylogowano."}, status=status.HTTP_200_OK)
+        response.delete_cookie('auth_token')
+        return response
 
 class UpdateProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]

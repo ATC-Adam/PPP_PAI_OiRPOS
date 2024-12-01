@@ -5,46 +5,50 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { FormControl, Typography } from '@mui/material';
 import { Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const [user, setUser] = useState({
-    userLogin: null,
-    userPassword: null
-  })
+    userLogin: '',
+    userPassword: ''
+  });
 
   const [errors, setErrors] = useState({
     loginError: false,
     passwordError: false,
     serverAns: ''
-  })
+  });
 
-  const handleSubmit = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
     const newErrors = {
-      loginError: !user.userLogin,
-      passwordError: !user.userPassword
+      loginError: !user.userLogin.trim(),
+      passwordError: !user.userPassword.trim()
     };
   
     setErrors(newErrors);
 
-    if (!newErrors.loginError && !newErrors.passwordError) 
+    if (!newErrors.loginError && !newErrors.passwordError) {
       login(user.userLogin, user.userPassword, (errorMessage) => { 
         setErrors((prev) => ({ ...prev, serverAns: errorMessage }));
       });
+    }
   }
 
   return (
-    <>
     <Box sx={{
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       height: '100vh',
     }}>
-      <Box sx={{
+      <Box component="form" onSubmit={handleSubmit} sx={{
         width: '25vw',
-        height: '40vh',
+        padding: '2rem',
         backgroundColor: 'rgba(10, 44, 61, 0.9)',
         color: 'text.default',
         display: 'flex',
@@ -64,51 +68,56 @@ const LoginPage = () => {
           Worker Guardian App
         </Typography>
 
-        <FormControl sx={{width: '50%'}}>
-          <TextField label='Username' 
+        <FormControl sx={{ width: '100%' }}>
+          <TextField 
+            label='Username' 
             variant='standard' 
             required 
-            error = { errors.loginError } 
-            helperText = { errors.loginError ? 'Insert username!' : '' }
+            error={errors.loginError} 
+            helperText={errors.loginError ? 'Insert username!' : ''}
+            value={user.userLogin}
             onChange={(e) => { setUser((prev) => ({ ...prev, userLogin: e.target.value })); }}
           />
-            
-          <TextField label='Password' 
+          
+          <TextField 
+            label='Password' 
             variant='standard' 
             required 
             error={errors.passwordError} 
-            helperText = { errors.loginError ? 'Insert password!' : '' }
+            helperText={errors.passwordError ? 'Insert password!' : ''}
             type='password' 
+            value={user.userPassword}
             onChange={(e) => { setUser((prev) => ({ ...prev, userPassword: e.target.value })); }} 
-            sx={{marginTop: '10%'}}
+            sx={{ marginTop: '10%' }}
           />
-            
-          <Button onClick={handleSubmit} 
+          
+          <Button 
+            type="submit"
             sx={{
               color: 'whitesmoke',
               backgroundColor: 'black',
-              width: '50%',
+              width: '100%',
               marginTop: '10%',
-              marginLeft: '25%'
-              }}>
+              '&:hover': {
+                backgroundColor: 'grey'
+              }
+            }}
+          >
             Login
           </Button>
 
           {
-            errors.serverAns ? 
+            errors.serverAns && 
               <Typography align='center' sx={{
                 color: 'error.main',
                 marginTop: '10%'
               }}>
                 {errors.serverAns}
-              </Typography> 
-            : 
-            <></>
+              </Typography>
           }
         </FormControl>
       </Box>
     </Box>
-    </>
   );
 };
 
