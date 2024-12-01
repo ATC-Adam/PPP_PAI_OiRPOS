@@ -27,7 +27,8 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 - Wszystkie endpointy API są poprzedzone prefiksem `/api/`.
 - Dane są przesyłane i zwracane w formacie **JSON**.
 - Pola hasła są **zaszyfrowane** po stronie serwera.
-- W przypadku endpointów wymagających autoryzacji, należy przesyłać token uwierzytelniający w nagłówku `Authorization`, **z wyjątkiem endpointu wylogowania, który oczekuje tokenu w ciele żądania**.
+- **Token uwierzytelniający jest teraz przechowywany w ciasteczku HTTP-only** ustawianym podczas logowania.
+- W przypadku endpointów wymagających autoryzacji, uwierzytelnianie odbywa się poprzez token przechowywany w ciasteczku `auth_token`.
 
 ---
 
@@ -85,7 +86,7 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 
 **URL:** `/api/login/`  
 **Metoda HTTP:** `POST`  
-**Opis:** Uwierzytelnia użytkownika i zwraca token uwierzytelniający.
+**Opis:** Uwierzytelnia użytkownika i ustawia token uwierzytelniający w ciasteczku HTTP-only.
 
 #### Nagłówki żądania:
 
@@ -111,13 +112,14 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 
 ```json
 {
-  "token": "twój_token",
   "user_id": 1,
   "login": "nowy_login",
   "name": "Jan",
   "surname": "Kowalski"
 }
 ```
+
+**Uwaga:** Token uwierzytelniający jest ustawiany w ciasteczku `auth_token` z flagą `HttpOnly`, co oznacza, że nie jest dostępny przez JavaScript.
 
 #### Możliwe błędy:
 
@@ -134,7 +136,7 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 #### Nagłówki żądania:
 
 - `Content-Type: application/json`
-- `Authorization: Token twój_token`
+- **Ciasteczko uwierzytelniające**: Musi być wysyłane automatycznie przez klienta (np. przeglądarkę lub narzędzie do testowania API).
 
 #### Body żądania:
 
@@ -167,7 +169,7 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 - **400 Bad Request:**
   - Stare hasło jest nieprawidłowe.
   - Nowe hasła nie są identyczne.
-- **401 Unauthorized:** Brak lub nieprawidłowy token uwierzytelniający.
+- **401 Unauthorized:** Brak lub nieprawidłowy token uwierzytelniający w ciasteczku.
 
 ---
 
@@ -175,23 +177,16 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 
 **URL:** `/api/logout/`  
 **Metoda HTTP:** `POST`  
-**Opis:** Wylogowuje użytkownika, usuwając jego token uwierzytelniający.
+**Opis:** Wylogowuje użytkownika, usuwając jego token uwierzytelniający i ciasteczko `auth_token`.
 
 #### Nagłówki żądania:
 
 - `Content-Type: application/json`
+- **Ciasteczko uwierzytelniające**: Musi być wysyłane automatycznie przez klienta.
 
 #### Body żądania:
 
-```json
-{
-  "auth_token": "twój_token"
-}
-```
-
-**Opis pól:**
-
-- `auth_token` *(string, wymagane)*: Token uwierzytelniający użytkownika.
+- Brak. Nie wysyłaj żadnych danych w ciele żądania.
 
 #### Przykładowa odpowiedź:
 
@@ -205,9 +200,7 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 
 #### Możliwe błędy:
 
-- **400 Bad Request:**
-  - Brak tokenu uwierzytelniającego.
-  - Nieprawidłowy token.
+- **401 Unauthorized:** Brak lub nieprawidłowy token uwierzytelniający w ciasteczku.
 
 ---
 
@@ -220,7 +213,7 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 #### Nagłówki żądania:
 
 - `Content-Type: application/json`
-- `Authorization: Token twój_token`
+- **Ciasteczko uwierzytelniające**: Musi być wysyłane automatycznie przez klienta.
 
 #### Body żądania:
 
@@ -252,19 +245,15 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 
 - **400 Bad Request:**
   - Login jest już zajęty przez innego użytkownika.
-- **401 Unauthorized:** Brak lub nieprawidłowy token uwierzytelniający.
+- **401 Unauthorized:** Brak lub nieprawidłowy token uwierzytelniający w ciasteczku.
 
 ---
 
 ## Autoryzacja
 
-- **Token uwierzytelniający** należy przesyłać w nagłówku `Authorization` w następującym formacie, **z wyjątkiem endpointu wylogowania, który oczekuje tokenu w ciele żądania**:
-
-```
-Authorization: Token twój_token
-```
-
-- Token jest otrzymywany podczas logowania i powinien być przechowywany bezpiecznie po stronie klienta.
+- **Token uwierzytelniający jest przechowywany w ciasteczku `auth_token`** ustawianym podczas logowania.
+- Klient (np. przeglądarka lub aplikacja) powinien automatycznie wysyłać ciasteczko `auth_token` z każdym żądaniem do endpointów wymagających uwierzytelnienia.
+- Token jest otrzymywany podczas logowania i przechowywany po stronie klienta w ciasteczku HTTP-only, co zwiększa bezpieczeństwo.
 
 ---
 
@@ -293,7 +282,10 @@ Authorization: Token twój_token
 
 ## Testowanie za pomocą Postmana
 
+**Uwaga:** Aby poprawnie testować endpointy korzystające z ciasteczek, upewnij się, że Postman jest skonfigurowany do ich obsługi.
+
 1. **Rejestracja użytkownika:**
+
    - **Metoda:** `POST`
    - **URL:** `http://127.0.0.1:8000/api/register/`
    - **Nagłówki:**
@@ -311,6 +303,7 @@ Authorization: Token twój_token
      ```
 
 2. **Logowanie użytkownika:**
+
    - **Metoda:** `POST`
    - **URL:** `http://127.0.0.1:8000/api/login/`
    - **Nagłówki:**
@@ -324,12 +317,15 @@ Authorization: Token twój_token
      }
      ```
 
+   - **Uwagi:**
+     - Po zalogowaniu token uwierzytelniający zostanie ustawiony w ciasteczku `auth_token`.
+
 3. **Zmiana hasła:**
+
    - **Metoda:** `POST`
    - **URL:** `http://127.0.0.1:8000/api/change_password/`
    - **Nagłówki:**
      - `Content-Type: application/json`
-     - `Authorization: Token twój_token`
    - **Body:**
 
      ```json
@@ -340,25 +336,27 @@ Authorization: Token twój_token
      }
      ```
 
+   - **Uwagi:**
+     - Upewnij się, że ciasteczko `auth_token` jest wysyłane z żądaniem (Postman powinien to robić automatycznie po zalogowaniu).
+
 4. **Wylogowanie użytkownika:**
+
    - **Metoda:** `POST`
    - **URL:** `http://127.0.0.1:8000/api/logout/`
    - **Nagłówki:**
      - `Content-Type: application/json`
    - **Body:**
+     - Brak.
 
-     ```json
-     {
-       "auth_token": "twój_token"
-     }
-     ```
+   - **Uwagi:**
+     - Ciasteczko `auth_token` zostanie usunięte po wylogowaniu.
 
 5. **Aktualizacja profilu użytkownika:**
+
    - **Metoda:** `PUT`
    - **URL:** `http://127.0.0.1:8000/api/update_profile/`
    - **Nagłówki:**
      - `Content-Type: application/json`
-     - `Authorization: Token twój_token`
    - **Body:**
 
      ```json
@@ -370,11 +368,6 @@ Authorization: Token twój_token
      ```
 
    - **Uwagi:**
+     - Upewnij się, że ciasteczko `auth_token` jest wysyłane z żądaniem.
      - Możesz wysłać tylko te pola, które chcesz zaktualizować.
      - Jeśli próbujesz zmienić login na taki, który już istnieje, otrzymasz błąd.
-
----
-
-**Uwaga:** Pamiętaj o zastąpieniu `twój_token` faktycznym tokenem uwierzytelniającym otrzymanym podczas logowania. Zadbaj o bezpieczne przechowywanie tokenów i haseł.
-
----
