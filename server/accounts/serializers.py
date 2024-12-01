@@ -70,3 +70,8 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         instance.surname = validated_data.get('surname', instance.surname)
         instance.save()
         return instance
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'login', 'name', 'surname')

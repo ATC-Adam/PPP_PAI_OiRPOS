@@ -10,6 +10,7 @@
    - [3. Zmiana hasła](#3-zmiana-hasła)
    - [4. Wylogowanie użytkownika](#4-wylogowanie-użytkownika)
    - [5. Aktualizacja profilu użytkownika](#5-aktualizacja-profilu-użytkownika)
+   - [6. Pobranie danych użytkownika](#6-pobranie-danych-użytkownika)
 4. [Autoryzacja](#autoryzacja)
 5. [Obsługa błędów](#obsługa-błędów)
 6. [Testowanie za pomocą Postmana](#testowanie-za-pomocą-postmana)
@@ -18,7 +19,7 @@
 
 ## Wprowadzenie
 
-API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplikacji Django. Udostępnia endpointy do rejestracji, logowania, zmiany hasła, wylogowywania oraz aktualizacji profilu użytkowników.
+API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplikacji Django. Udostępnia endpointy do rejestracji, logowania, zmiany hasła, wylogowywania, aktualizacji profilu oraz pobierania danych użytkownika.
 
 ---
 
@@ -27,7 +28,7 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 - Wszystkie endpointy API są poprzedzone prefiksem `/api/`.
 - Dane są przesyłane i zwracane w formacie **JSON**.
 - Pola hasła są **zaszyfrowane** po stronie serwera.
-- **Token uwierzytelniający jest teraz przechowywany w ciasteczku HTTP-only** ustawianym podczas logowania.
+- **Token uwierzytelniający jest przechowywany w ciasteczku HTTP-only** ustawianym podczas logowania.
 - W przypadku endpointów wymagających autoryzacji, uwierzytelnianie odbywa się poprzez token przechowywany w ciasteczku `auth_token`.
 
 ---
@@ -249,6 +250,40 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
 
 ---
 
+### 6. Pobranie danych użytkownika
+
+**URL:** `/api/user/`  
+**Metoda HTTP:** `GET`  
+**Opis:** Zwraca dane zalogowanego użytkownika.
+
+#### Nagłówki żądania:
+
+- `Content-Type: application/json`
+- **Ciasteczko uwierzytelniające**: Musi być wysyłane automatycznie przez klienta.
+
+#### Body żądania:
+
+- Brak. Żądanie nie wymaga żadnych danych w ciele.
+
+#### Przykładowa odpowiedź:
+
+- **Status HTTP:** `200 OK`
+
+```json
+{
+  "id": 1,
+  "login": "nowy_login",
+  "name": "Jan",
+  "surname": "Kowalski"
+}
+```
+
+#### Możliwe błędy:
+
+- **401 Unauthorized:** Brak lub nieprawidłowy token uwierzytelniający w ciasteczku.
+
+---
+
 ## Autoryzacja
 
 - **Token uwierzytelniający jest przechowywany w ciasteczku `auth_token`** ustawianym podczas logowania.
@@ -371,3 +406,15 @@ API aplikacji **Accounts** umożliwia zarządzanie użytkownikami w Twojej aplik
      - Upewnij się, że ciasteczko `auth_token` jest wysyłane z żądaniem.
      - Możesz wysłać tylko te pola, które chcesz zaktualizować.
      - Jeśli próbujesz zmienić login na taki, który już istnieje, otrzymasz błąd.
+
+6. **Pobranie danych użytkownika:**
+
+   - **Metoda:** `GET`
+   - **URL:** `http://127.0.0.1:8000/api/user/`
+   - **Nagłówki:**
+     - `Content-Type: application/json`
+   - **Body:**
+     - Brak.
+
+   - **Uwagi:**
+     - Upewnij się, że ciasteczko `auth_token` jest wysyłane z żądaniem.
