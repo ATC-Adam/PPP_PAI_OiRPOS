@@ -1,0 +1,18 @@
+[
+    {
+      "model": "projects.project",
+      "pk": 1,
+      "fields": {
+        "name": "Projekt startowy",
+        "description": "Opis początkowego projektu"
+      }
+    },
+    {
+      "model": "projects.project",
+      "pk": 2,
+      "fields": {
+        "name": "Projekt testowy",
+        "description": "Inny przykładowy projekt"
+      }
+    }
+]  

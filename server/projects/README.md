@@ -205,3 +205,10 @@ Error responses generally follow the format:
   "detail": "Descriptive error message."
 }
 ```
+
+### Initialize database with some default values
+To do so run the command below:
+```bash
+python manage.py loaddata initial_data.json
+```
+After the execution the database should have initial values.
